@@ -123,7 +123,8 @@ PageBase {
                     id: wallImg
 
                     anchors.fill: parent
-                    source: Wallpapers.current
+                    // Videos can't render in an Image; show the extracted frame instead
+                    source: Wallpapers.currentAnalysable
                     preventInit: wallIndicatorLoader.opacity > 0
                     fadeOutAnim: Anim.DefaultEffects
                     fadeInAnim: Anim.SlowEffects

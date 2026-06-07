@@ -116,7 +116,7 @@ Singleton {
     ImageAnalyser {
         id: analyser
 
-        source: Wallpapers.current
+        source: Wallpapers.currentAnalysable
     }
 
     Timer {

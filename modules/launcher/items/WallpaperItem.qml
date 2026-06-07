@@ -6,6 +6,7 @@ import qs.components
 import qs.components.effects
 import qs.components.images
 import qs.services
+import qs.utils
 
 Item {
     id: root
@@ -20,6 +21,7 @@ Item {
     Component.onCompleted: {
         scale = Qt.binding(() => PathView.isCurrentItem ? 1 : PathView.onPath ? 0.8 : 0);
         opacity = Qt.binding(() => PathView.onPath ? 1 : 0);
+        Wallpapers.ensureVideoFrame(modelData.path);
     }
 
     implicitWidth: image.width + Tokens.padding.medium * 2
@@ -59,14 +61,14 @@ Item {
 
         MaterialIcon {
             anchors.centerIn: parent
-            text: "image"
+            text: Images.isValidVideoByName(root.modelData.path) ? "movie" : "image"
             color: Colours.tPalette.m3outline
             fontStyle: Tokens.font.icon.builders.extraLarge.scale(2).weight(Font.DemiBold).build()
         }
 
         CachingImage {
             anchors.fill: parent
-            path: root.modelData.path
+            path: Wallpapers.thumbnailFor(root.modelData.path)
             smooth: !root.PathView.view.moving
             sourceSize: {
                 const dpr = (QsWindow.window as QsWindow)?.devicePixelRatio ?? 1;

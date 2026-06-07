@@ -40,13 +40,17 @@ PageBase {
                 opacity: modelData ? 1 : 0
                 enabled: modelData
 
-                source: String(modelData?.path ?? "")
+                // Videos render their extracted frame (empty until generated); see Wallpapers.thumbnailFor
+                source: modelData ? Wallpapers.thumbnailFor(modelData.path) : ""
                 text: modelData?.name ?? ""
                 onClicked: {
                     Wallpapers.setWallpaper(modelData.path);
                     root.nState.closeSubPage();
                     root.nState.closeSubPage();
                 }
+
+                Component.onCompleted: if (modelData)
+                    Wallpapers.ensureVideoFrame(modelData.path)
             }
         }
     }

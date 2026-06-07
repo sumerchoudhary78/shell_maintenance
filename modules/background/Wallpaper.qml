@@ -4,7 +4,6 @@ import QtQuick
 import Caelestia.Config
 import qs.components
 import qs.components.filedialog
-import qs.components.images
 import qs.services
 import qs.utils
 
@@ -12,24 +11,22 @@ Item {
     id: root
 
     property string source: Wallpapers.current
-    property CachingImage current
+    property Item current: one
     property bool completed
 
     onSourceChanged: {
         if (!source)
             current = null;
+        else if (current === one)
+            two.update();
         else
-            current = imgComp.createObject(this, {
-                path: source
-            });
+            one.update();
     }
 
     Component.onCompleted: {
         if (source)
             Qt.callLater(() => {
-                current = imgComp.createObject(this, {
-                    path: source
-                });
+                one.update();
                 completed = true;
             });
     }
@@ -74,8 +71,8 @@ Item {
                             id: dialog
 
                             title: qsTr("Select a wallpaper")
-                            filterLabel: qsTr("Image files")
-                            filters: Images.validImageExtensions
+                            filterLabel: qsTr("Image/video files")
+                            filters: Images.validWallpaperExtensions
                             onAccepted: path => Wallpapers.setWallpaper(path)
                         }
 
@@ -100,35 +97,94 @@ Item {
         }
     }
 
-    Component {
-        id: imgComp
+    Slot {
+        id: one
+    }
 
-        CachingImage {
-            id: img
+    Slot {
+        id: two
+    }
+
+    component Slot: Item {
+        id: slot
+
+        property string path
+
+        function update(): void {
+            if (path === root.source)
+                root.current = slot;
+            else
+                path = root.source;
+        }
+
+        anchors.fill: parent
+
+        opacity: 0
+        scale: Wallpapers.showPreview ? 1 : 0.8
+
+        onPathChanged: {
+            if (!path)
+                loader.setSource("");
+            else if (Images.isValidVideoByName(path))
+                loader.setSource("WallpaperVideo.qml", {
+                    path
+                });
+            else if (Images.isAnimatedImageByName(path))
+                loader.setSource("WallpaperAnimated.qml", {
+                    path
+                });
+            else
+                loader.setSource("WallpaperImage.qml", {
+                    path
+                });
+        }
+
+        // Unload the hidden slot once faded out so videos/gifs stop decoding
+        onOpacityChanged: {
+            if (opacity === 0 && root.current !== slot)
+                path = "";
+        }
+
+        states: State {
+            name: "visible"
+            when: root.current === slot
+
+            PropertyChanges {
+                slot.opacity: 1
+                slot.scale: 1
+            }
+        }
+
+        transitions: Transition {
+            Anim {
+                target: slot
+                properties: "opacity,scale"
+            }
+        }
+
+        Loader {
+            id: loader
 
             anchors.fill: parent
-
-            opacity: 0
+            asynchronous: true
 
             onStatusChanged: {
-                if (status === Image.Ready)
-                    anim.start();
+                if (status === Loader.Error && Images.isValidVideoByName(slot.path)) {
+                    console.warn("Wallpaper: failed to load video player (is QtMultimedia installed?), falling back to a static frame");
+                    setSource("WallpaperImage.qml", {
+                        path: Wallpapers.videoFramePath(slot.path)
+                    });
+                }
+            }
+        }
+
+        Connections {
+            function onReadyChanged(): void {
+                if (loader.item.ready) // qmllint disable missing-property
+                    root.current = slot;
             }
 
-            Anim on opacity {
-                id: anim
-
-                type: Anim.SlowEffects
-                running: false
-                from: 0
-                to: 1
-            }
-
-            Timer {
-                running: root.current !== img && root.current?.status === Image.Ready
-                interval: anim.duration
-                onTriggered: img.destroy()
-            }
+            target: loader.item
         }
     }
 }
