@@ -62,13 +62,7 @@ Item {
             }
         ]
 
-        MenuItem {
-            required property var modelData
-
-            readonly property int value: modelData.value
-
-            text: modelData.text
-        }
+        OrientItem {}
     }
 
     Variants {
@@ -84,13 +78,7 @@ Item {
                     label: m.name
                 })))
 
-        MenuItem {
-            required property var modelData
-
-            readonly property string monName: modelData.name
-
-            text: modelData.label
-        }
+        MirrorItem {}
     }
 
     Variants {
@@ -209,8 +197,8 @@ Item {
                 label: qsTr("Orientation")
                 subtext: qsTr("Rotate the output")
                 menuItems: orientInst.instances
-                active: menuItems.find(i => i.value === (root.mon?.transform ?? 0)) ?? menuItems[0] ?? null
-                onSelected: item => Displays.setTransform(root.activeName, item.value)
+                active: menuItems.find(i => (i as OrientItem).value === (root.mon?.transform ?? 0)) ?? menuItems[0] ?? null
+                onSelected: item => Displays.setTransform(root.activeName, (item as OrientItem).value)
             }
 
             SelectRow {
@@ -220,8 +208,8 @@ Item {
                 label: qsTr("Mirror")
                 subtext: qsTr("Show another display's contents on this one")
                 menuItems: mirrorInst.instances
-                active: menuItems.find(i => i.monName === (root.mon && root.mon.mirrorOf !== "none" ? root.mon.mirrorOf : "")) ?? menuItems[0] ?? null
-                onSelected: item => Displays.setMirror(root.activeName, item.monName || null)
+                active: menuItems.find(i => (i as MirrorItem).monName === (root.mon && root.mon.mirrorOf !== "none" ? root.mon.mirrorOf : "")) ?? menuItems[0] ?? null
+                onSelected: item => Displays.setMirror(root.activeName, (item as MirrorItem).monName || null)
             }
 
             // --- Position ------------------------------------------------
@@ -318,5 +306,21 @@ Item {
                 onSelected: item => Displays.moveCurrentWorkspaceTo(item.text)
             }
         }
+    }
+
+    component OrientItem: MenuItem {
+        required property var modelData
+
+        readonly property int value: modelData.value
+
+        text: modelData.text
+    }
+
+    component MirrorItem: MenuItem {
+        required property var modelData
+
+        readonly property string monName: modelData.name
+
+        text: modelData.label
     }
 }
