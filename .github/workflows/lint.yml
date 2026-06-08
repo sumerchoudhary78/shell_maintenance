@@ -25,6 +25,10 @@ jobs:
       - name: Lint QML
         shell: fish {0}
         run: |
+          # WallpaperVideo.qml imports QtMultimedia; ensure the QML module is present so
+          # qmllint resolves MediaPlayer/VideoOutput enums (else: unqualified-access warnings).
+          pacman -Sy --needed --noconfirm qt6-multimedia
+
           /usr/lib/qt6/bin/qmllint --version
 
           # Generate tooling

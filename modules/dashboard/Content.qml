@@ -41,6 +41,12 @@ Item {
                 iconName: "cloud",
                 text: qsTr("Weather"),
                 enabled: Config.dashboard.showWeather
+            },
+            {
+                component: displaysComponent,
+                iconName: "desktop_windows",
+                text: qsTr("Displays"),
+                enabled: true
             }
         ];
         return allTabs.filter(tab => tab.enabled);
@@ -181,6 +187,12 @@ Item {
                 id: weatherComponent
 
                 WeatherTab {}
+            }
+
+            Component {
+                id: displaysComponent
+
+                DisplaysTab {}
             }
 
             Behavior on contentX {
