@@ -33,28 +33,30 @@ Scope {
         sourceComponent: StyledWindow {
             id: win
 
+            readonly property real walkSpeed: 0.075 // px per ms
+
             name: "claudeindicator"
             screen: Quickshell.screens.find(s => s.name === Hypr.focusedMonitor?.name) ?? Quickshell.screens[0]
-            implicitWidth: 160
-            implicitHeight: 160
+            implicitHeight: 150
             WlrLayershell.layer: WlrLayer.Top
             WlrLayershell.exclusionMode: ExclusionMode.Ignore
             mask: Region {}
 
-            anchors.top: true
+            anchors.left: true
             anchors.right: true
-            margins.top: 12
-            margins.right: 12
+            anchors.bottom: true
 
-            Logo3D {
-                id: logo
+            Clawd3D {
+                id: clawd
 
                 property bool shown: false
 
-                anchors.fill: parent
-                spinning: Claude.working
+                width: 170
+                height: 150
+                animating: Claude.working
                 opacity: shown && Claude.working ? 1 : 0
                 scale: shown && Claude.working ? 1 : 0.4
+                transformOrigin: Item.Bottom
                 Component.onCompleted: shown = true
 
                 Behavior on opacity {
@@ -67,6 +69,41 @@ Scope {
                     Anim {
                         type: Anim.DefaultSpatial
                     }
+                }
+            }
+
+            SequentialAnimation {
+                running: Claude.working
+                loops: Animation.Infinite
+
+                ScriptAction {
+                    script: clawd.facing = 1
+                }
+
+                NumberAnimation {
+                    target: clawd
+                    property: "x"
+                    to: win.width - clawd.width
+                    duration: Math.max(1000, (win.width - clawd.width) / win.walkSpeed)
+                }
+
+                PauseAnimation {
+                    duration: 500
+                }
+
+                ScriptAction {
+                    script: clawd.facing = -1
+                }
+
+                NumberAnimation {
+                    target: clawd
+                    property: "x"
+                    to: 0
+                    duration: Math.max(1000, (win.width - clawd.width) / win.walkSpeed)
+                }
+
+                PauseAnimation {
+                    duration: 500
                 }
             }
         }
