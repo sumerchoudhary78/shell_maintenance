@@ -8,6 +8,7 @@ import "modules"
 import "modules/drawers"
 import "modules/background"
 import "modules/areapicker"
+import "modules/claudeindicator"
 import "modules/lock"
 import Quickshell
 
@@ -26,6 +27,7 @@ ShellRoot {
     ConfigToasts {}
     Shortcuts {}
     BatteryMonitor {}
+    ClaudeIndicator {}
     IdleMonitors {
         lock: lock
     }
