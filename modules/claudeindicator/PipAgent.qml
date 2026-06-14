@@ -204,10 +204,10 @@ Item {
         } else if (behavior === "exit") {
             const dir = charX > areaWidth / 2 ? 1 : -1;
             facing = dir;
-            walkClock += dt * 2.2;
-            charX += dir * baseSpeed * 1.7 * dt;
+            walkClock += dt * 3;
+            charX += dir * baseSpeed * 3.6 * dt;
             pipY = groundY;
-            if (charX < -130 || charX > areaWidth + 130)
+            if (charX < -90 || charX > areaWidth + 90)
                 exited = true;
         }
 

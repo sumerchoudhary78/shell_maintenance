@@ -86,13 +86,8 @@ Scope {
 
             function show2nd(): void {
                 agent2Loader.active = true;
-                if (second) {
-                    second.charX = width + 60;
-                    second.pipY = groundY;
-                    second.started = true;
-                    second.exited = false;
+                if (second)
                     second.behavior = dirMode;
-                }
             }
 
             function endRoutine(): void {
@@ -216,6 +211,13 @@ Scope {
                     groundY: win.groundY
                     isPrimary: false
                     autoHome: false
+                    Component.onCompleted: {
+                        charX = win.width + 60; // enter from off the right edge
+                        pipY = win.groundY;
+                        started = true;
+                        exited = false;
+                        behavior = win.dirMode;
+                    }
                 }
             }
 
