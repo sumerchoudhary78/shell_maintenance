@@ -20,8 +20,7 @@ Item {
     property real rockDeg: 0 // body sway about the feet
     property bool sleeping: false // dozing: show zzz
     property bool mirror: false // flip horizontally (right-edge peek)
-
-    readonly property real spriteSide: 200
+    property real spriteSide: 200
     // Fraction of the sprite height (from top) where the feet rest — measured
     // per set so the feet stay on the ground line as frames alternate.
     readonly property real footFrac: {

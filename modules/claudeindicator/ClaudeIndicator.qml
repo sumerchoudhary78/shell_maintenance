@@ -2,16 +2,62 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import Quickshell.Wayland
 import qs.components
 import qs.components.containers
 import qs.services
+import qs.utils
 
 Scope {
     id: root
 
+    // User config (optional). Overridable live via
+    // ~/.config/caelestia/claude-indicator.json; sensible defaults otherwise.
+    QtObject {
+        id: cfg
+
+        property bool enabled: true
+        property bool alwaysOn: true // peek at home when idle; false = only while Claude works
+        property string homeSide: "right"
+        property real sizeScale: 1
+        property real speedScale: 1
+        property bool dance: true
+        property bool fight: true
+        property bool bubbles: true
+
+        function apply(txt: string): void {
+            try {
+                const j = JSON.parse(txt);
+                if (typeof j.enabled === "boolean")
+                    enabled = j.enabled;
+                if (typeof j.alwaysOn === "boolean")
+                    alwaysOn = j.alwaysOn;
+                if (j.homeSide === "left" || j.homeSide === "right")
+                    homeSide = j.homeSide;
+                if (typeof j.sizeScale === "number")
+                    sizeScale = Math.max(0.4, Math.min(3, j.sizeScale));
+                if (typeof j.speedScale === "number")
+                    speedScale = Math.max(0.2, Math.min(4, j.speedScale));
+                if (typeof j.dance === "boolean")
+                    dance = j.dance;
+                if (typeof j.fight === "boolean")
+                    fight = j.fight;
+                if (typeof j.bubbles === "boolean")
+                    bubbles = j.bubbles;
+            } catch (e) {}
+        }
+    }
+
+    FileView {
+        path: `${Paths.config}/claude-indicator.json`
+        watchChanges: true
+        onLoaded: cfg.apply(text())
+        onFileChanged: reload()
+    }
+
     Loader {
-        active: true
+        active: cfg.enabled && (cfg.alwaysOn || Claude.working)
         asynchronous: true
 
         sourceComponent: StyledWindow {
@@ -31,19 +77,21 @@ Scope {
             property bool menuShown: false
 
             readonly property real groundY: height - 6
+            readonly property real pxScale: Math.max(0.6, Math.min(2.2, (screen?.height ?? 1080) / 1080)) * cfg.sizeScale
             readonly property bool routineActive: dirMode !== "none"
             readonly property bool dragging: primary.state === "dragging"
             readonly property var second: agent2Loader.item
+            readonly property bool moving: primary.busy || (second && second.busy) || routineActive
 
             // Interaction geometry (window coords), tracking the primary mascot
-            readonly property real dbX: primary.charX - 70
-            readonly property real dbY: primary.pipY - 165
-            readonly property real dbW: 140
-            readonly property real dbH: 182
+            readonly property real dbX: primary.charX - 70 * pxScale
+            readonly property real dbY: primary.pipY - 165 * pxScale
+            readonly property real dbW: 140 * pxScale
+            readonly property real dbH: 182 * pxScale
             readonly property real menuW: 214
             readonly property real menuH: 32
             readonly property real menuX: Math.max(6, Math.min(width - menuW - 6, primary.charX - menuW / 2))
-            readonly property real menuY: primary.pipY - 165 - 12 - menuH
+            readonly property real menuY: dbY - 12 - menuH
             readonly property bool menuOpen: menuShown && !routineActive && !dragging
 
             // Input region: empty during routines (full click-through), the
@@ -164,6 +212,14 @@ Scope {
                 }
             }
 
+            function step(dt: real): void {
+                winClock += dt;
+                primary.tick(dt);
+                if (second)
+                    second.tick(dt);
+                director(dt);
+            }
+
             name: "claudeindicator"
             screen: Quickshell.screens.find(s => s.name === Hypr.focusedMonitor?.name) ?? Quickshell.screens[0]
             WlrLayershell.layer: WlrLayer.Top
@@ -180,15 +236,19 @@ Scope {
             anchors.right: true
             anchors.bottom: true
 
+            // Vsync-smooth ticking only while something moves; a slow timer
+            // keeps idle/peek poses (breath, blink, zzz) alive at ~12fps so a
+            // dozing mascot costs almost nothing.
             FrameAnimation {
-                running: true
-                onTriggered: {
-                    win.winClock += frameTime;
-                    primary.tick(frameTime);
-                    if (win.second)
-                        win.second.tick(frameTime);
-                    win.director(frameTime);
-                }
+                running: win.moving
+                onTriggered: win.step(frameTime)
+            }
+
+            Timer {
+                running: !win.moving
+                interval: 80
+                repeat: true
+                onTriggered: win.step(0.08)
             }
 
             PipAgent {
@@ -198,7 +258,10 @@ Scope {
                 groundY: win.groundY
                 isPrimary: true
                 active: Claude.working
-                autoHome: true
+                autoHome: cfg.alwaysOn
+                homeSide: cfg.homeSide
+                pxScale: win.pxScale
+                speedScale: cfg.speedScale
             }
 
             Loader {
@@ -211,8 +274,11 @@ Scope {
                     groundY: win.groundY
                     isPrimary: false
                     autoHome: false
+                    homeSide: cfg.homeSide
+                    pxScale: win.pxScale
+                    speedScale: cfg.speedScale
                     Component.onCompleted: {
-                        charX = win.width + 60; // enter from off the right edge
+                        charX = cfg.homeSide === "left" ? -60 : win.width + 60; // enter from off the far edge
                         pipY = win.groundY;
                         started = true;
                         exited = false;
@@ -259,11 +325,11 @@ Scope {
                 readonly property real maxW: 240
 
                 x: Math.max(6, Math.min(win.width - width - 6, primary.charX - width / 2))
-                y: primary.pipY - 170 - height
+                y: win.dbY - 5 - height
                 width: card.width
                 height: card.height + 7
                 visible: opacity > 0.01
-                opacity: primary.bubbleText !== "" && !win.routineActive ? 1 : 0
+                opacity: cfg.bubbles && primary.bubbleText !== "" && !win.routineActive ? 1 : 0
 
                 Behavior on opacity {
                     NumberAnimation {
@@ -351,7 +417,16 @@ Scope {
                 visible: win.menuOpen
 
                 Repeater {
-                    model: ["Go home", "Dance", "Fight"]
+                    model: {
+                        const m = [];
+                        if (cfg.alwaysOn)
+                            m.push("Go home");
+                        if (cfg.dance)
+                            m.push("Dance");
+                        if (cfg.fight)
+                            m.push("Fight");
+                        return m;
+                    }
 
                     Rectangle {
                         id: btn

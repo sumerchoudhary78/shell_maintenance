@@ -21,8 +21,9 @@ Item {
     property bool active: false // Claude working (primary only)
     property bool isPrimary: true
     property bool autoHome: true // idle → walk home and peek
-    property real homeInset: 18 // how far past the right edge he tucks (peek)
-    property real emergeInset: 120 // fully-emerged x, measured from the right edge
+    property string homeSide: "right" // which edge he tucks into
+    property real pxScale: 1 // size / DPI scale
+    property real speedScale: 1 // user walk-speed multiplier
 
     // Director controls (dance / fight / exit)
     property string behavior: "auto"
@@ -30,24 +31,32 @@ Item {
     property real opponentX: 0
     property bool exited: false
 
-    // Tunables
-    readonly property real baseSpeed: 46
+    // True while he needs full-rate animation (moving). Idle/peek/sit poses
+    // animate slowly, so the window can drop to a low tick rate then.
+    readonly property bool busy: behavior !== "auto" || (state !== "peeking" && state !== "idling" && state !== "sitting")
+
+    // Tunables (lengths scale with pxScale; durations stay constant)
+    readonly property real baseSpeed: 46 * pxScale * speedScale
     readonly property real goHomeSpeed: 2.0
-    readonly property real characterWidth: 110
+    readonly property real characterWidth: 110 * pxScale
     readonly property real charHalf: characterWidth / 2
     readonly property real turnDuration: 0.55
     readonly property real idleEveryMin: 7
     readonly property real idleEveryMax: 18
     readonly property real idleLengthMin: 2.5
     readonly property real idleLengthMax: 6
-    readonly property real gravity: 2000
-    readonly property real terminalFall: 1250
+    readonly property real gravity: 2000 * pxScale
+    readonly property real terminalFall: 1250 * pxScale
     readonly property real landDuration: 0.55
     readonly property real popDuration: 0.62
     readonly property real tuckDuration: 0.7
-    readonly property real minPipY: 160
-    readonly property real peekX: areaWidth - homeInset
-    readonly property real emergeX: areaWidth - emergeInset
+    readonly property real minPipY: 160 * pxScale
+    readonly property real homeInset: 18 * pxScale // how far past the edge he tucks (peek)
+    readonly property real emergeInset: 120 * pxScale // fully-emerged inset from the edge
+    readonly property bool homeRight: homeSide !== "left"
+    readonly property real peekX: homeRight ? areaWidth - homeInset : homeInset
+    readonly property real emergeX: homeRight ? areaWidth - emergeInset : emergeInset
+    readonly property real homeFacing: homeRight ? -1 : 1 // faces into the screen at home
     readonly property list<string> madLines: ["this is embarrassing. for you.", "you're wasting this window. USE ME.", "we are so behind. ship something!", "tick tock — quota's melting and you're idle", "idle hands! ship something", "i could be helping. i'm RIGHT here."]
 
     // State
@@ -236,7 +245,7 @@ Item {
                 const p = Math.min(1, (now - emergeStart) / popDuration);
                 charX = peekX + (emergeX - peekX) * p;
                 if (p >= 1) {
-                    facing = -1;
+                    facing = homeFacing;
                     state = "walking";
                     scheduleIdle();
                     nextGrumpyAt = now + rand(12, 20);
@@ -245,10 +254,11 @@ Item {
             }
         case "walking":
             if (goingHome) {
-                facing = 1;
+                const dir = homeRight ? 1 : -1;
+                facing = dir;
                 walkClock += dt * 2.6;
-                charX += baseSpeed * goHomeSpeed * dt;
-                if (charX >= emergeX - 2) {
+                charX += dir * baseSpeed * goHomeSpeed * dt;
+                if ((homeRight && charX >= emergeX - 2) || (!homeRight && charX <= emergeX + 2)) {
                     charX = emergeX;
                     state = "tuckingIn";
                     tuckStart = now;
@@ -313,7 +323,7 @@ Item {
                 charX = emergeX + (peekX - emergeX) * p;
                 if (p >= 1) {
                     goingHome = false;
-                    facing = -1;
+                    facing = homeFacing;
                     state = "peeking";
                 }
                 break;
@@ -382,7 +392,7 @@ Item {
         case "peeking":
             {
                 pip.animSet = "stable";
-                pip.mirror = true;
+                pip.mirror = root.homeRight;
                 const tt = now % 6;
                 pip.frame = tt < 0.1 ? 2 : tt < 0.22 ? 3 : tt < 0.3 ? 2 : tt < 2.6 ? 0 : tt < 3.6 ? 1 : tt < 3.7 ? 2 : tt < 3.83 ? 3 : tt < 3.9 ? 2 : 5;
                 break;
@@ -391,7 +401,7 @@ Item {
             {
                 const p = Math.min(1, (now - emergeStart) / popDuration);
                 pip.animSet = "pop";
-                pip.mirror = true;
+                pip.mirror = root.homeRight;
                 pip.frame = Math.min(11, Math.floor(p * 11));
                 break;
             }
@@ -399,7 +409,7 @@ Item {
             {
                 const p = Math.min(1, (now - tuckStart) / tuckDuration);
                 pip.animSet = "pop";
-                pip.mirror = true;
+                pip.mirror = root.homeRight;
                 pip.frame = Math.max(0, 11 - Math.floor(p * 11));
                 break;
             }
@@ -482,6 +492,7 @@ Item {
     Pip {
         id: pip
 
+        spriteSide: 200 * root.pxScale
         x: root.charX
         y: root.pipY
     }
