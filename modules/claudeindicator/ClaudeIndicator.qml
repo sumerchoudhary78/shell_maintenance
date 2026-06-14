@@ -57,7 +57,9 @@ Scope {
     }
 
     Loader {
-        active: cfg.enabled && (cfg.alwaysOn || Claude.working)
+        // Disabled entirely while game mode is on — Pip vanishes and costs
+        // nothing; he returns when game mode is turned off.
+        active: cfg.enabled && !GameMode.enabled && (cfg.alwaysOn || Claude.working)
         asynchronous: true
 
         sourceComponent: StyledWindow {
