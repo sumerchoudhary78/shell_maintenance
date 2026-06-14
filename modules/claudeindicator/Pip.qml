@@ -19,6 +19,7 @@ Item {
     property real bodySquash: 0 // + squashes (wider/shorter), − stretches
     property real rockDeg: 0 // body sway about the feet
     property bool sleeping: false // dozing: show zzz
+    property bool mirror: false // flip horizontally (right-edge peek)
 
     readonly property real spriteSide: 200
     // Fraction of the sprite height (from top) where the feet rest — measured
@@ -28,6 +29,8 @@ Item {
             return 0.934;
         if (animSet === "fall")
             return 0.875;
+        if (animSet === "stable")
+            return 0.902;
         return 0.873;
     }
     readonly property real footY: footFrac * spriteSide
@@ -43,7 +46,9 @@ Item {
             "mad": 12,
             "fall": 12,
             "pickup": 12,
-            "air": 12
+            "air": 12,
+            "stable": 10,
+            "pop": 12
         };
         return Math.max(0, Math.min(frame, (counts[animSet] ?? 1) - 1));
     }
@@ -65,6 +70,10 @@ Item {
             return `pickup-${clampedFrame}`;
         case "air":
             return `air-${clampedFrame}`;
+        case "stable":
+            return `stable-${clampedFrame}`;
+        case "pop":
+            return `pop-${clampedFrame}`;
         default:
             return "idle-right";
         }
@@ -78,6 +87,7 @@ Item {
         width: root.spriteSide
         height: root.spriteSide
         source: Quickshell.shellPath(`assets/pip/${root.frameName}.png`)
+        mirror: root.mirror
         smooth: true
         mipmap: true
         cache: true
