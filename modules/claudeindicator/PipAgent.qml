@@ -340,7 +340,10 @@ Item {
             }
             break;
         }
-        pipY = state === "falling" ? groundY - airHeight : groundY;
+        // While dragging, pipY is owned by the mouse handler (dragTo) — don't
+        // stomp it back to the ground here or he can't be lifted.
+        if (state !== "dragging")
+            pipY = state === "falling" ? groundY - airHeight : groundY;
     }
 
     function makePose(now: real): void {
