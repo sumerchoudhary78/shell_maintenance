@@ -7,7 +7,9 @@ VideoOutput {
     id: root
 
     required property string path
-    readonly property bool ready: player.mediaStatus === MediaPlayer.LoadedMedia || player.mediaStatus === MediaPlayer.BufferingMedia || player.mediaStatus === MediaPlayer.BufferedMedia
+    // Latched imperatively (not a binding) so play()/pause() side effects on
+    // mediaStatus can't form a binding loop back into this property.
+    property bool ready: false
     readonly property bool shouldPlay: Wallpapers.animationsActiveOn((QsWindow.window as QsWindow)?.screen ?? null)
 
     function syncPlayback(): void {
@@ -31,5 +33,10 @@ VideoOutput {
         source: root.path
         videoOutput: root
         loops: MediaPlayer.Infinite
+
+        onMediaStatusChanged: {
+            if (!root.ready && (mediaStatus === MediaPlayer.LoadedMedia || mediaStatus === MediaPlayer.BufferingMedia || mediaStatus === MediaPlayer.BufferedMedia))
+                root.ready = true;
+        }
     }
 }
