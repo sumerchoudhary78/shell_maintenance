@@ -81,6 +81,15 @@ Item {
         target: root.monitor
     }
 
+    Connections {
+        function onTemperatureChanged(): void {
+            if (root.Config.osd.enableWarmLight)
+                root.show();
+        }
+
+        target: WarmLight
+    }
+
     Timer {
         id: timer
 

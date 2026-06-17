@@ -28,6 +28,13 @@ class ServiceConfig : public ConfigObject {
     CONFIG_GLOBAL_PROPERTY(qreal, audioIncrement, 0.1)
     CONFIG_GLOBAL_PROPERTY(qreal, brightnessIncrement, 0.1)
     CONFIG_GLOBAL_PROPERTY(qreal, maxVolume, 1.0)
+    // Warm light (hyprsunset). Temperatures in Kelvin; 6500 = neutral/off.
+    CONFIG_GLOBAL_PROPERTY(bool, warmLightAuto, false)
+    CONFIG_GLOBAL_PROPERTY(int, warmLightNightTemperature, 4000)
+    CONFIG_GLOBAL_PROPERTY(int, warmLightDayTemperature, 6500)
+    CONFIG_GLOBAL_PROPERTY(int, warmLightStep, 250)
+    CONFIG_GLOBAL_PROPERTY(int, warmLightStartHour, 20)
+    CONFIG_GLOBAL_PROPERTY(int, warmLightEndHour, 6)
     CONFIG_GLOBAL_PROPERTY(bool, smartScheme, true)
     CONFIG_GLOBAL_PROPERTY(QString, defaultPlayer, u"Spotify"_s)
     CONFIG_GLOBAL_PROPERTY(QVariantList, playerAliases,

@@ -221,5 +221,75 @@ PageBase {
             active: root.gpuItems[root.gpuKeyToIndex(GlobalConfig.services.gpuType)]
             onSelected: item => GlobalConfig.services.gpuType = root.gpuValues[root.gpuItems.indexOf(item)]
         }
+
+        // Warm light
+        SectionHeader {
+            text: qsTr("Warm light")
+        }
+
+        ToggleRow {
+            Layout.fillWidth: true
+            first: true
+            text: qsTr("Auto schedule")
+            subtext: qsTr("Warm the screen automatically between the hours below")
+            checked: GlobalConfig.services.warmLightAuto
+            onToggled: GlobalConfig.services.warmLightAuto = checked
+        }
+
+        StepperRow {
+            Layout.fillWidth: true
+            label: qsTr("Night temperature")
+            subtext: qsTr("Colour temperature while warm light is on (K)")
+            value: GlobalConfig.services.warmLightNightTemperature
+            from: 1000
+            to: 6500
+            stepSize: 100
+            onMoved: v => GlobalConfig.services.warmLightNightTemperature = v
+        }
+
+        StepperRow {
+            Layout.fillWidth: true
+            label: qsTr("Day temperature")
+            subtext: qsTr("Daytime temperature when auto schedule is on; 6500 = off (K)")
+            value: GlobalConfig.services.warmLightDayTemperature
+            from: 1000
+            to: 6500
+            stepSize: 100
+            onMoved: v => GlobalConfig.services.warmLightDayTemperature = v
+        }
+
+        StepperRow {
+            Layout.fillWidth: true
+            label: qsTr("Start hour")
+            subtext: qsTr("Hour the night window begins (0-23)")
+            value: GlobalConfig.services.warmLightStartHour
+            from: 0
+            to: 23
+            stepSize: 1
+            onMoved: v => GlobalConfig.services.warmLightStartHour = v
+        }
+
+        StepperRow {
+            Layout.fillWidth: true
+            label: qsTr("End hour")
+            subtext: qsTr("Hour the night window ends (0-23)")
+            value: GlobalConfig.services.warmLightEndHour
+            from: 0
+            to: 23
+            stepSize: 1
+            onMoved: v => GlobalConfig.services.warmLightEndHour = v
+        }
+
+        StepperRow {
+            Layout.fillWidth: true
+            last: true
+            label: qsTr("Temperature step")
+            subtext: qsTr("Amount the temperature changes per scroll (K)")
+            value: GlobalConfig.services.warmLightStep
+            from: 50
+            to: 1000
+            stepSize: 50
+            onMoved: v => GlobalConfig.services.warmLightStep = v
+        }
     }
 }

@@ -106,6 +106,32 @@ Item {
                 }
             }
         }
+
+        // Warm light
+        WrappedLoader {
+            shouldBeActive: Config.osd.enableWarmLight
+
+            sourceComponent: CustomMouseArea {
+                function onWheel(event: WheelEvent) {
+                    if (event.angleDelta.y > 0)
+                        WarmLight.warmer();
+                    else if (event.angleDelta.y < 0)
+                        WarmLight.cooler();
+                }
+
+                implicitWidth: Tokens.sizes.osd.sliderWidth
+                implicitHeight: Tokens.sizes.osd.sliderHeight
+
+                FilledSlider {
+                    anchors.fill: parent
+
+                    icon: "bedtime"
+                    // Fuller slider = warmer (lower Kelvin)
+                    value: (WarmLight.maxTemperature - WarmLight.temperature) / (WarmLight.maxTemperature - WarmLight.minTemperature)
+                    onMoved: WarmLight.setTemperature(WarmLight.maxTemperature - value * (WarmLight.maxTemperature - WarmLight.minTemperature))
+                }
+            }
+        }
     }
 
     component WrappedLoader: Loader {

@@ -132,6 +132,16 @@ StyledRect {
                     }
                 }
                 DelegateChoice {
+                    roleValue: "warmLight"
+                    delegate: Toggle {
+                        icon: "bedtime"
+                        checked: WarmLight.active
+                        // When auto schedule is on, the schedule owns the state
+                        enabled: !WarmLight.autoEnabled
+                        onClicked: WarmLight.toggle()
+                    }
+                }
+                DelegateChoice {
                     roleValue: "dnd"
                     delegate: Toggle {
                         icon: "notifications_off"
