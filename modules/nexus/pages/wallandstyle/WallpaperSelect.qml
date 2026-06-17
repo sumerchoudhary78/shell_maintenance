@@ -43,9 +43,9 @@ PageBase {
                 FileDialog {
                     id: browseDialog
 
-                    title: qsTr("Select an image")
-                    filterLabel: qsTr("Image files")
-                    filters: Images.validImageExtensions
+                    title: qsTr("Select a wallpaper")
+                    filterLabel: qsTr("Image/video files")
+                    filters: Images.validWallpaperExtensions
                     onAccepted: path => {
                         Wallpapers.setWallpaper(path);
                         root.nState.closeSubPage();
@@ -126,7 +126,9 @@ PageBase {
                     opacity: modelData ? 1 : 0
                     enabled: modelData
 
-                    source: String(modelData?.path ?? "")
+                    Component.onCompleted: if (modelData) Wallpapers.ensureVideoFrame(modelData.path)
+
+                    source: modelData ? Wallpapers.thumbnailFor(modelData.path) : ""
                     text: {
                         if (!modelData)
                             return "";

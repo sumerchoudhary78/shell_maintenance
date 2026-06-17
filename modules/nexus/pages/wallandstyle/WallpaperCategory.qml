@@ -40,7 +40,9 @@ PageBase {
                 opacity: modelData ? 1 : 0
                 enabled: modelData
 
-                source: String(modelData?.path ?? "")
+                Component.onCompleted: if (modelData) Wallpapers.ensureVideoFrame(modelData.path)
+
+                source: modelData ? Wallpapers.thumbnailFor(modelData.path) : ""
                 text: modelData?.name ?? ""
                 onClicked: {
                     Wallpapers.setWallpaper(modelData.path);
